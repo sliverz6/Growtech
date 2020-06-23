@@ -1,0 +1,20 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#main-header {
+    height: 8rem;
+    background: #999;
+}
+
+#main {
+    height: 50rem;
+    background: #777;
+}
+
+#main-footer {
+    height: 10rem;
+    background: #555;
+}
