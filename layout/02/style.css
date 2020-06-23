@@ -4,6 +4,11 @@
     box-sizing: border-box;
 }
 
+.container {
+    width: 70%;
+    margin: 0 auto;
+}
+
 #main-header {
     height: 8rem;
     background: #999;
