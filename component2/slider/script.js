@@ -1,13 +1,34 @@
 class UIHelper {
-    static slide(type) {
-        const slideItems = document.querySelectorAll('.slider__item');
+    // static isSliding = false
 
+    static slide(type, time) {
+        // if (this.isSliding) {
+        //     return;
+        // }
+
+        const slideItems = document.querySelectorAll('.slider__item');
+        
         slideItems.forEach(slideItem => {
             const containerWidth = slideItem.parentElement.clientWidth;
             const currentXPos = parseInt(slideItem.style.left);
-            const targetXPos = type === 'left' ? currentXPos + containerWidth : currentXPos - containerWidth;
-            slideItem.style.left = `${targetXPos}px`;
+            const moveAmount = type === 'left' ? currentXPos + containerWidth : currentXPos - containerWidth;
+            slideItem.animate([
+                // keyframes
+                { left: `${slideItem.style.left}` },
+                { left: `${moveAmount}px` },
+            ], {
+                duration: time,
+                fill: "forwards",
+                easing: "cubic-bezier(0.42, 0, 0.58, 1)"
+            });
+            slideItem.style.left = `${moveAmount}px`;
+            this.isSliding = true;
+
+            // setTimeout(() => {
+            //     this.isSliding = false;
+            // }, 500);
         });
+        
     }
 }
 
@@ -21,8 +42,10 @@ class SlideItem {
 class Slider {
     slideList = [];
     currentSlideIdx;
+    isSliding = false;
 
-    init() {
+    constructor(duration) {
+        this.duration = duration;
         this.connectButtonsElement();
         this.connectSlideElement();
     }
@@ -30,19 +53,28 @@ class Slider {
     slide(type) {
         if (this.currentSlideIdx > 0 && type === 'left') {
             this.currentSlideIdx--;
-            UIHelper.slide(type);
+            UIHelper.slide(type, this.duration);
         } else if (this.currentSlideIdx < this.slideList.length - 1 && type === 'right') {
             this.currentSlideIdx++;
-            UIHelper.slide(type);
+            UIHelper.slide(type, this.duration);
         }
     }
 
     buttonHandler(e) {
-        if (e.target.classList.contains('slider__btn--left')) {
-            this.slide('left')
-        } else {
-            this.slide('right')
+        if (this.isSliding) {
+            return;
         }
+
+        this.isSliding = true;
+        if (e.target.classList.contains('slider__btn--left')) {
+            this.slide('left');
+        } else {
+            this.slide('right');
+        }
+
+        setTimeout(() => {
+            this.isSliding = false;
+        }, this.duration);
     }
 
     connectButtonsElement() {
@@ -76,5 +108,4 @@ class Slider {
     }
 }
 
-const slider = new Slider();
-slider.init();
+new Slider(300);
