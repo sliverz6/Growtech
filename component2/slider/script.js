@@ -48,6 +48,7 @@ class Slider {
         this.duration = duration;
         this.connectButtonsElement();
         this.connectSlideElement();
+        this.updateDotMenu();
     }
 
     slide(type) {
@@ -74,6 +75,7 @@ class Slider {
 
         setTimeout(() => {
             this.isSliding = false;
+            this.updateDotMenu();
         }, this.duration);
     }
 
@@ -96,6 +98,17 @@ class Slider {
         });
 
         this.setDefaultView(defaultSlideIdx);
+    }
+
+    updateDotMenu() {
+        const dots = document.querySelectorAll('.slider__dot');
+        dots.forEach((dot, idx) => {
+            if (this.currentSlideIdx === idx) {
+                dot.classList.add('current');
+            } else {
+                dot.classList.remove('current');
+            }
+        });
     }
 
     setDefaultView(slideIdx = 0) {
