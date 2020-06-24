@@ -1,109 +1,25 @@
 class UIHelper {
-    // static isSliding = false
-
-    static slide(type, time) {
-        // if (this.isSliding) {
-        //     return;
-        // }
-
-        const slideItems = document.querySelectorAll('.slider__item');
-        
-        slideItems.forEach(slideItem => {
-            const containerWidth = slideItem.parentElement.clientWidth;
-            const currentXPos = parseInt(slideItem.style.left);
-            const moveAmount = type === 'left' ? currentXPos + containerWidth : currentXPos - containerWidth;
-            slideItem.animate([
-                // keyframes
-                { left: `${slideItem.style.left}` },
-                { left: `${moveAmount}px` },
-            ], {
-                duration: time,
-                fill: "forwards",
-                easing: "cubic-bezier(0.42, 0, 0.58, 1)"
-            });
-            slideItem.style.left = `${moveAmount}px`;
-            this.isSliding = true;
-
-            // setTimeout(() => {
-            //     this.isSliding = false;
-            // }, 500);
-        });
-        
-    }
+   
 }
 
-class SlideItem {
-    constructor(index, element) {
+class Slide {
+    constructor(index) {
         this.index = index;
-        this.element = element;
     }
 }
 
-class Slider {
-    slideList = [];
-    currentSlideIdx;
-    isSliding = false;
-
-    constructor(duration) {
-        this.duration = duration;
-        this.connectButtonsElement();
-        this.connectSlideElement();
-        this.updateDotMenu();
+class DotMenu {
+    constructor(currentSlideIdx, updateSlideFunction) {
+        this.currentSlideIndex = currentSlideIdx;
+        this.updateSlideHandler = updateSlideFunction;
+        this.connectDotMenu();
+        this.updateDotMenu(this.currentSlideIndex);
     }
 
-    slide(type) {
-        if (this.currentSlideIdx > 0 && type === 'left') {
-            this.currentSlideIdx--;
-            UIHelper.slide(type, this.duration);
-        } else if (this.currentSlideIdx < this.slideList.length - 1 && type === 'right') {
-            this.currentSlideIdx++;
-            UIHelper.slide(type, this.duration);
-        }
-    }
-
-    buttonHandler(e) {
-        if (this.isSliding) {
-            return;
-        }
-
-        this.isSliding = true;
-        if (e.target.classList.contains('slider__btn--left')) {
-            this.slide('left');
-        } else {
-            this.slide('right');
-        }
-
-        setTimeout(() => {
-            this.isSliding = false;
-            this.updateDotMenu();
-        }, this.duration);
-    }
-
-    connectButtonsElement() {
-        const buttons = document.querySelectorAll('.slider__btn');
-        for (const button of buttons) {
-            button.addEventListener('click', this.buttonHandler.bind(this));
-        }
-    }
-
-    connectSlideElement() {
-        const slideItems = document.querySelectorAll('.slider__item');
-        let defaultSlideIdx;
-        slideItems.forEach((slideItem, index) => {
-            slideItem.style.position = 'absolute';
-            this.slideList.push(new SlideItem(index, slideItem));
-            if (slideItem.classList.contains('home')) {
-                defaultSlideIdx = index;
-            }
-        });
-
-        this.setDefaultView(defaultSlideIdx);
-    }
-
-    updateDotMenu() {
+    updateDotMenu(slideIdx) {
         const dots = document.querySelectorAll('.slider__dot');
-        dots.forEach((dot, idx) => {
-            if (this.currentSlideIdx === idx) {
+        dots.forEach((dot, index) => {
+            if (index === slideIdx) {
                 dot.classList.add('current');
             } else {
                 dot.classList.remove('current');
@@ -111,14 +27,117 @@ class Slider {
         });
     }
 
-    setDefaultView(slideIdx = 0) {
-        const slideItems = document.querySelectorAll('.slider__item');
-        slideItems.forEach((slideItem, index) => {
-            const containerWidth = slideItem.parentElement.clientWidth;
-            slideItem.style.left = `${(containerWidth * index) - (containerWidth * slideIdx)}px`;
+    dotHandler(index) {
+        this.currentSlideIndex = index;
+        this.updateSlideHandler(this.currentSlideIndex);
+        this.updateDotMenu(this.currentSlideIndex);
+    }
+
+    connectDotMenu() {
+        const dots = document.querySelectorAll('.slider__dot');
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', this.dotHandler.bind(this, index));
         });
-        this.currentSlideIdx = slideIdx;
     }
 }
 
-new Slider(300);
+class Slider {
+    slides = [];
+    slideTime = 500;
+    auto = false;
+    autoSlideTime = 5000;
+
+    constructor(currentSlideIdx) {
+        this.currentSlideIndex = currentSlideIdx;
+        this.setting();
+        this.init();
+    }
+    
+    setting() {
+        const slider = document.querySelector('.slider');
+        if (slider.classList.contains('auto')) {
+            this.auto = true;
+        }
+    }
+
+    init() {
+        this.dotMenu = new DotMenu(this.currentSlideIndex, this.setSlide.bind(this));
+
+        const slidesEl = document.querySelectorAll('.slider__item');
+        slidesEl.forEach((slide, index) => { 
+            this.slides.push(new Slide(index));
+            const slideWidth = slide.clientWidth;
+            slide.style.left = `${slideWidth * index - slideWidth * this.currentSlideIndex}px`;
+        });
+
+        this.connectButton();
+    }
+
+    moveSlide(prevPos, curPos, time) {
+        const slidesEl = document.querySelectorAll('.slider__item');
+        slidesEl.forEach((slide, index) => {
+            slide.animate([
+                { left: prevPos[index] },
+                { left: curPos[index] }
+            ], {
+                duration: time,
+                fill: "forwards",
+                easing: "cubic-bezier(0.42, 0, 0.58, 1)"
+            });
+        });
+    }
+
+    setSlide(index) {
+        if (index >= 0) {
+            this.currentSlideIndex = index;
+        }
+        
+        let previousPos = [];
+        let currentPos = [];
+
+        const slidesEl = document.querySelectorAll('.slider__item');
+        slidesEl.forEach((slide, index) => {
+            previousPos.push(slide.style.left);
+
+            const slideWidth = slide.clientWidth;
+            slide.style.left = `${slideWidth * index - slideWidth * this.currentSlideIndex}px`;
+
+            currentPos.push(slide.style.left);
+        });
+
+        this.moveSlide(previousPos, currentPos, this.slideTime);
+        
+        this.dotMenu.updateDotMenu(this.currentSlideIndex);
+    }
+
+    connectButton() {
+        const leftBtn = document.querySelector('.slider__btn--left');
+        const rightBtn = document.querySelector('.slider__btn--right');
+        leftBtn.addEventListener('click', this.btnHandler.bind(this, 'left'));
+        rightBtn.addEventListener('click', this.btnHandler.bind(this, 'right'));
+
+        if (this.auto) {
+            setInterval(this.btnHandler.bind(this, 'right'), this.autoSlideTime);
+        }
+    }
+
+    btnHandler(direction) {
+        if (direction === 'left') {
+            if (this.currentSlideIndex === 0) {
+                this.currentSlideIndex = this.slides.length - 1;
+            } else {
+                this.currentSlideIndex--;
+            }
+            this.setSlide();
+        } else if (direction === 'right') {
+            if (this.currentSlideIndex === this.slides.length - 1) {
+                this.currentSlideIndex = 0;
+            } else {
+                this.currentSlideIndex++;
+            }
+            this.setSlide();
+        }
+    }
+}
+
+new Slider(0);
